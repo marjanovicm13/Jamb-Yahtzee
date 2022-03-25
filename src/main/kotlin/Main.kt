@@ -1,56 +1,36 @@
+//Six dices used
+val diceOne = Dice()
+val diceTwo = Dice()
+val diceThree = Dice()
+val diceFour = Dice()
+val diceFive = Dice()
+val diceSix = Dice()
+
 fun main() {
     println("Yahtzee")
 
-    //Six dices used
-    val diceOne = Dice()
-    val diceTwo = Dice()
-    val diceThree = Dice()
-    val diceFour = Dice()
-    val diceFive = Dice()
-    val diceSix = Dice()
-
-    val dices: MutableList<Dice> = mutableListOf(diceOne, diceTwo, diceThree, diceFour, diceFive, diceSix)
-    var diceToLock: String //Dice which user chooses to lock
-
-    val diceCounter = intArrayOf(1, 2, 3, 4, 5, 6)
     var counter = 0
-
     val gameSystem = System()
-    var totalScore = 0 //Total score scored by the user
-
+    val userOne = User("Guest")
     var userAnswer: String
-    var chosenCombination: String //Combination chosen by the user
 
     for (j in 1..5) {
-        gameSystem.reset(dices, diceCounter) //Reset system before every round
+        gameSystem.reset() //Reset game system before every round
         for (i in 1..3) {
             println("Write 'roll' to roll your dices!")
-
             do {
                 userAnswer = readLine().toString().lowercase()
             }while(userAnswer != "roll")
             println("Rolling..")
 
             for (dice in gameSystem.dices) {
-                println("Dice number " + gameSystem.diceCounter[counter] + ": " + dice.roll()) //Dice roll
+                userOne.rollDices(dice) //Dice roll
+                println("Dice number " + gameSystem.diceCounter[counter] + ": " + dice.getValue())
                 counter++
             }
 
             if (i != 3) {
-                do {
-                    println("Choose which dice to lock (Example: '1' to lock dice number one, 'exit' to stop locking dices):")
-                    diceToLock = readLine().toString()
-                    try {
-                        when (diceToLock.toInt()) {
-                            1 -> gameSystem.lockDice(diceOne, 1)
-                            2 -> gameSystem.lockDice(diceTwo, 2)
-                            3 -> gameSystem.lockDice(diceThree, 3)
-                            4 -> gameSystem.lockDice(diceFour, 4)
-                            5 -> gameSystem.lockDice(diceFive, 5)
-                            6 -> gameSystem.lockDice(diceSix, 6)
-                        }
-                    } catch (msg: NumberFormatException) { }
-                } while (diceToLock != "exit")
+                userOne.lockDice(gameSystem) //User chooses which dices to lock
                 counter = 0
             }
             else { //Last roll add all unlocked dices to locked ones
@@ -74,12 +54,56 @@ fun main() {
             println(combination)
         }
 
+        userOne.chooseCombination(gameSystem) //User chooses the combination
+
+        userOne.setUserScore(gameSystem.scoreCombination(userOne.getChosenCombination())) //The combination chosen by the user is calculated
+
+        println("Total score: " + userOne.getUserScore()) //Total score achieved by the user
+    }
+}
+
+class User(private val userName: String){
+     private var totalScore: Int = 0
+     private lateinit var diceToLock: String
+     private lateinit var chosenCombination: String
+
+    fun getUserScore(): Int{
+        return totalScore
+    }
+
+    fun setUserScore(totalScore:Int){
+        this.totalScore += totalScore
+    }
+
+    fun rollDices(diceToRoll: Dice){
+        diceToRoll.roll()
+    }
+
+    fun chooseCombination(gameSystem: System){
         do {
             chosenCombination = readLine().toString()
         } while (!gameSystem.allCombinations.contains(chosenCombination))
+    }
 
-        totalScore += gameSystem.scoreCombination(chosenCombination)
-        println("Total score: $totalScore")
+    fun getChosenCombination(): String{
+        return chosenCombination
+    }
+
+    fun lockDice(gameSystem: System){
+        do {
+            println("Choose which dice to lock (Example: '1' to lock dice number one, 'exit' to stop locking dices):")
+            diceToLock = readLine().toString()
+            try {
+                when (diceToLock.toInt()) {
+                    1 -> gameSystem.lockDice(diceOne, 1)
+                    2 -> gameSystem.lockDice(diceTwo, 2)
+                    3 -> gameSystem.lockDice(diceThree, 3)
+                    4 -> gameSystem.lockDice(diceFour, 4)
+                    5 -> gameSystem.lockDice(diceFive, 5)
+                    6 -> gameSystem.lockDice(diceSix, 6)
+                }
+            } catch (msg: NumberFormatException) { }
+        } while (diceToLock != "exit")
     }
 }
 
@@ -96,18 +120,17 @@ class Dice{
 }
 
 class System{
+    var dices: MutableList<Dice> = mutableListOf(diceOne, diceTwo, diceThree, diceFour, diceFive, diceSix) //Dices used for the game
+    val lockedDices: MutableList<Dice> = mutableListOf() //Dices locked by the user
+    var diceCounter = intArrayOf(1, 2, 3, 4, 5, 6)
 
-    private var score: Int = 0 //Score achieved by the user
     var allCombinations: MutableList<String> = mutableListOf("Yahtzee", "Poker", "Tris", "Straight", "Chance") //All combinations possible
     private val combinations: MutableList<String> = mutableListOf() //Combinations which the user rolled
-    val lockedDices: MutableList<Dice> = mutableListOf() //Dices locked by the user
+    private var score: Int = 0 //Score achieved by the user
 
-    lateinit var dices: MutableList<Dice>
-    lateinit var diceCounter: IntArray
-
-    fun reset(dices: MutableList<Dice>, diceCounter: IntArray){ //reset game every round
-        this.dices = dices.toMutableList()  //Copy dices to attribute
-        this.diceCounter = diceCounter
+    fun reset(){ //reset game every round
+        this.dices = mutableListOf(diceOne, diceTwo, diceThree, diceFour, diceFive, diceSix)
+        this.diceCounter = intArrayOf(1, 2, 3, 4, 5, 6)
         this.lockedDices.clear() //Clear locked dices before the next round
         this.combinations.clear() //Clear combinations user got before the next round
     }
